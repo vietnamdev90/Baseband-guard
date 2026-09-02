@@ -161,7 +161,7 @@ setup_baseband_guard() {
 }
 
 show_config_lsm_notice() {
-    if awk '/^[[:space:]]*config[[:space:]]+LSM$/ { found=1; exit } END { exit !found }' $SECURITY_KCONFIG; then
+    if awk '/^[[:space:]]*config[[:space:]]+LSM$/ { found=1; exit } END { exit !found }' "$SECURITY_KCONFIG"; then
         echo ""
         echo "Please manually set your defconfig, select one append to your defconfig:"
         echo ""
@@ -169,20 +169,23 @@ show_config_lsm_notice() {
         /^[[:space:]]*config[[:space:]]+LSM$/ { in_lsm=1; next }
         in_lsm && /^[[:space:]]*config[[:space:]]+/ { exit }
         in_lsm && /^[[:space:]]*default/ {
-            match($0, /"([^"]+)"/, m)
+            val = ""
+            if (match($0, /"[^"]+"/)) {
+                val = substr($0, RSTART + 1, RLENGTH - 2)
+            }
             if ($0 ~ /if[[:space:]]+/) {
-                sub(/.*if[[:space:]]+/, "", $0)
                 cond = $0
+                sub(/.*if[[:space:]]+/, "", cond)
                 print "if " cond " enabled:"
             } else {
                 print "else:"
             }
-            if (m[1] != "") {
-                print "CONFIG_LSM=" m[1] ",baseband_guard"
+            if (val != "") {
+                print "CONFIG_LSM=" val ",baseband_guard"
                 print ""
             }
         }
-        ' $SECURITY_KCONFIG
+        ' "$SECURITY_KCONFIG"
     fi
 }
 
